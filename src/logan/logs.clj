@@ -19,17 +19,16 @@
        (re-seq #"href=\"([-\d]+)\.txt\"")
        (map second)))
 
-(defn count-channel [f channel]
-  (apply merge-with +
-         (for [day (take 100 (days-for channel))]
-           (count-day f channel day))))
-
 (defn nick-freqs [freqs [line time nick message]]
   (update-in freqs [nick] (fnil inc 0)))
 
-(def nick-freqs-for-channel (partial count-channel nick-freqs))
+(defn count-channel [channel]
+  (apply merge-with +
+         (for [day (days-for channel)]
+           @(bot/send-back `(count-day nick-freqs ~channel ~day)
+                           {:uri (System/getenv "RABBITMQ_URL")}))))
 
 (defn -main [channel]
   (println (format "Participants in #%s by lines sent:" channel))
-  (doseq [[nick count] (sort-by val (nick-freqs-for-channel channel))]
+  (doseq [[nick count] (sort-by val (count-channel channel))]
     (println nick "-" count)))
