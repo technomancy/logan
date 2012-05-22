@@ -1,6 +1,8 @@
-(ns logan.logs
+(ns logan.core
   (:require [clojure.java.io :as io]
-            [die.roboter :as bot]))
+            [die.roboter :as bot]
+            [cheshire.core :as json]
+            [ring.adapter.jetty :as jetty]))
 
 (defn get-log-stream [channel day]
   (-> (format "http://raynes.me/logs/irc.freenode.net/%s/%s.txt" channel day)
@@ -10,7 +12,7 @@
 (defn parse-line [line]
   (re-find #"\[([:\d]+?)\] \*?(\S+?):? (.*)" line))
 
-(defn count-day [f channel day]
+(defn reduce-day [f channel day]
   (with-open [r (io/reader (get-log-stream channel day))]
     (reduce f {} (map parse-line (line-seq r)))))
 
@@ -23,12 +25,15 @@
   (update-in freqs [nick] (fnil inc 0)))
 
 (defn count-channel [channel]
-  (apply merge-with +
-         (for [day (days-for channel)]
-           @(bot/send-back `(count-day nick-freqs ~channel ~day)
-                           {:uri (System/getenv "RABBITMQ_URL")}))))
+  (->> (days-for channel)
+       (map #(bot/send-back `(reduce-day nick-freqs ~channel ~%)))
+       (doall)
+       (map deref)
+       (apply merge-with +)))
 
-(defn -main [channel]
-  (println (format "Participants in #%s by lines sent:" channel))
-  (doseq [[nick count] (sort-by val (count-channel channel))]
-    (println nick "-" count)))
+(defn app [req]
+  (json/encode (count-channel (subs (:uri req) 1))))
+
+(defn -main [& [port]]
+  (let [port (Integer. (or port (System/getenv "PORT")))]
+    (jetty/run-jetty app {:port port})))
