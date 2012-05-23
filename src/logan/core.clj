@@ -25,11 +25,15 @@
   (update-in freqs [nick] (fnil inc 0)))
 
 (defn count-channel [channel]
-  (->> (days-for channel)
-       (map #(bot/send-back `(reduce-day nick-freqs ~channel ~%)))
-       (doall)
-       (map deref)
-       (apply merge-with +)))
+  ;; workaround for https://github.com/mefesto/wabbitmq/pull/7
+  (bot/with-robots {:virtual-host (if-let [uri (System/getenv "RABBITMQ_URL")]
+                                    (->> (.getPath (java.net.URI. uri))
+                                         (re-find #"/?(.*)") (second)))}
+    (->> (days-for channel)
+         (map #(bot/send-back `(reduce-day nick-freqs ~channel ~%)))
+         (doall)
+         (map deref)
+         (apply merge-with +))))
 
 (defn app [req]
   (json/encode (count-channel (subs (:uri req) 1))))
