@@ -35,8 +35,19 @@
          (map deref)
          (apply merge-with +))))
 
+(defonce responses (atom {}))
+
+(defn queue-count [channel]
+  (future (swap! responses conj channel (count-channel channel))))
+
 (defn app [req]
-  (json/encode (count-channel (subs (:uri req) 1))))
+  (let [channel (subs (:uri req) 1)]
+    (if-let [response (@responses channel)]
+      {:status 200 :headers {"Content-Type" "application/json"}
+       :body (json/encode response)}
+      (do (queue-count channel)
+          {:status 202 {:headers {"Content-Type" "text/plain"}}
+           :body "Please wait..."}))))
 
 (defn -main [& [port]]
   (let [port (Integer. (or port (System/getenv "PORT")))]
