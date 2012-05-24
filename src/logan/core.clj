@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [die.roboter :as bot]
             [cheshire.core :as json]
+            [ringmon.monitor :as monitor]
             [ring.adapter.jetty :as jetty]))
 
 (defn get-log-stream [channel day]
@@ -43,12 +44,12 @@
 (defn app [req]
   (let [channel (subs (:uri req) 1)]
     (if-let [response (@responses channel)]
-      {:status 200 :headers {"Content-Type" "application/json"}
+      {:status 200 :headers {"Content-type" "application/json"}
        :body (json/encode response)}
       (do (queue-count channel)
-          {:status 202 {:headers {"Content-Type" "text/plain"}}
+          {:status 202 :headers {"Content-type" "text/plain"}
            :body "Please wait..."}))))
 
 (defn -main [& [port]]
   (let [port (Integer. (or port (System/getenv "PORT")))]
-    (jetty/run-jetty app {:port port})))
+    (jetty/run-jetty (monitor/wrap-ring-monitor app) {:port port})))

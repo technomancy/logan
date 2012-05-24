@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [ring/ring-jetty-adapter "1.1.0"]
                  [cheshire "4.0.0"]
+                 [ringmon "0.1.3-SNAPSHOT"]
                  [die-roboter "1.0.0-SNAPSHOT"]])
