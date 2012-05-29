@@ -29,7 +29,8 @@
   ;; workaround for https://github.com/mefesto/wabbitmq/pull/7
   (bot/with-robots {:virtual-host (if-let [uri (System/getenv "RABBITMQ_URL")]
                                     (->> (.getPath (java.net.URI. uri))
-                                         (re-find #"/?(.*)") (second)))}
+                                         (re-find #"/?(.*)") (second))
+                                    "/")}
     (->> (let [days (days-for channel)]
            (if-let [limit (System/getenv "DAY_LIMIT")]
              (take (Integer. (System/getenv "DAY_LIMIT")) days)
