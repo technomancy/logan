@@ -30,7 +30,10 @@
   (bot/with-robots {:virtual-host (if-let [uri (System/getenv "RABBITMQ_URL")]
                                     (->> (.getPath (java.net.URI. uri))
                                          (re-find #"/?(.*)") (second)))}
-    (->> (days-for channel)
+    (->> (let [days (days-for channel)]
+           (if-let [limit (System/getenv "DAY_LIMIT")]
+             (take (Integer. (System/getenv "DAY_LIMIT")) days)
+             days))
          (map #(bot/send-back `(reduce-day nick-freqs ~channel ~%)))
          (doall)
          (map deref)
@@ -39,7 +42,8 @@
 (defonce responses (atom {}))
 
 (defn queue-count [channel]
-  (future (swap! responses conj channel (count-channel channel))))
+  (future (swap! responses conj channel (count-channel channel))
+          (println "Finished counting" channel)))
 
 (defn app [req]
   (let [channel (subs (:uri req) 1)]
