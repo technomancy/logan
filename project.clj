@@ -1,4 +1,4 @@
-(defproject logan "0.1.1-SNAPSHOT"
+(defproject logan "0.1.1"
   :description "Distributed analysis of IRC logs"
   :url "https://github.com/technomancy/logan"
   :license {:name "Eclipse Public License"
