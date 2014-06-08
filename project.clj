@@ -8,4 +8,13 @@
                  [ring/ring-jetty-adapter "1.1.0"]
                  [cheshire "4.0.0"]
                  [ringmon "0.1.2"]
-                 [die-roboter "1.0.0"]])
+                 [die-roboter "1.0.0"]]
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version"
+                   "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag"]
+                  ["uberjar"]
+                  ["change" "version"
+                   "leiningen.release/bump-version"]
+                  ["vcs" "commit"]])
